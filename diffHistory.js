@@ -13,7 +13,7 @@ var saveHistoryObject = function (history, callback){
 };
 
 var saveDiffObject = function(currentObject, original, updated, user, reason, callback){
-  // console.log('saveDiffObject',original, updated);
+
     var diff = jsondiffpatch.diff(JSON.parse(JSON.stringify(original)),
         JSON.parse(JSON.stringify(updated)));
 
@@ -123,28 +123,24 @@ var getHistories = function (modelName, id, expandableFields, callback) {
         async.map(histories, function (history, mapCallback) {
             var changedValues = [];
             var changedFields = [];
+
+            var date = history.diff['updatedOn'][1] || history.diff['updatedOn'][0]
+            var d = new Date(date);
+            var datetime =`: ${d.getDay()}/${d.getMonth()}/${d.getUTCFullYear()}`;
             for (var key in history.diff) {
                 if (history.diff.hasOwnProperty(key)) {
 
-                    if (expandableFields.indexOf(key) > -1) {
-                        //var oldDate = new Date(history.diff[key][0]);
-                        //var newDate = new Date(history.diff[key][1]);
-                        //if (oldDate != "Invalid Date" && newDate != "Invalid Date") {
-                        //    oldValue = oldDate.getFullYear() + "-" + (oldDate.getMonth() + 1) + "-" + oldDate.getDate();
-                        //    newValue = newDate.getFullYear() + "-" + (newDate.getMonth() + 1) + "-" + newDate.getDate();
-                        //}
-                        //else {
+                      if ('updatedOn' !== key) {
                         var oldValue = history.diff[key][0];
                         var newValue = history.diff[key][1];
-                        //}
-                        changedValues.push(key + " from " + oldValue + " to " + newValue);
-                    }
-                    else {
-                        changedFields.push(key);
-                    }
+
+                        changedValues.push(`${key} จาก \"${oldValue}\" เป็น \"${newValue}\" ${datetime}`);
+                      }
+
                 }
             }
-            var comment = "modified " + changedFields.concat(changedValues).join(", ");
+
+            var comment =  `${history.user.hasOwnProperty('email')?history.user.email:history.user}`+" แก้ " + changedFields.concat(changedValues).join(", ");
             return mapCallback(null, {
                 changedBy: history.user,
                 changedAt: history.createdAt,
@@ -179,7 +175,6 @@ var plugin = function lastModifiedPlugin(schema, options) {
     });
 
     schema.pre("findOneAndUpdate", function (next) {
-
         saveDiffs(this, function(){
             next();
         });
