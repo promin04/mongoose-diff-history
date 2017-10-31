@@ -4,6 +4,7 @@ var jsondiffpatch = require("jsondiffpatch").create();
 
 var saveHistoryObject = function (history, callback){
     history.save(function (err) {
+
         if (err) {
             err.message = "Mongo Error :" + err.message;
         }
@@ -12,14 +13,18 @@ var saveHistoryObject = function (history, callback){
 };
 
 var saveDiffObject = function(currentObject, original, updated, user, reason, callback){
+  // console.log('saveDiffObject',original, updated);
     var diff = jsondiffpatch.diff(JSON.parse(JSON.stringify(original)),
         JSON.parse(JSON.stringify(updated)));
+
     if (diff) {
+
         History.findOne({collectionName: currentObject.constructor.modelName, collectionId: currentObject._id}).sort("-version").exec(function (err, lastHistory) {
             if (err) {
                 err.message = "Mongo Error :" + err.message;
                 return callback();
             }
+
             var history = new History({
                 collectionName: currentObject.constructor.modelName,
                 collectionId: currentObject._id,
@@ -28,6 +33,10 @@ var saveDiffObject = function(currentObject, original, updated, user, reason, ca
                 reason: reason,
                 version: lastHistory ? lastHistory.version + 1 : 0
             });
+            history.markModified("diff");
+            history.markModified("user");
+            delete history.diff['$setOnInsert'];
+
             saveHistoryObject(history, callback);
         });
     }
@@ -37,32 +46,40 @@ var saveDiffObject = function(currentObject, original, updated, user, reason, ca
 };
 
 var saveDiffHistory = function(queryObject, currentObject, callback) {
-    currentObject.constructor.findOne({_id: currentObject._id}, function (err, selfObject) {
-        if(selfObject){
-            var dbObject = {}, updateParams;
-            updateParams = queryObject._update["$set"] ? queryObject._update["$set"] : queryObject._update;
-            Object.keys(updateParams).forEach(function(key) {
-                dbObject[key] = selfObject[key];
-            });
-            saveDiffObject(currentObject, dbObject, updateParams, queryObject.options.__user, queryObject.options.__reason, function(){
-                callback();
-            });
-        }
-    });
+
+    currentObject.constructor.findOne({_id: currentObject._id}).lean().exec(
+      function (err, selfObject) {
+
+          if(selfObject){
+              var dbObject = {}, updateParams;
+              updateParams = queryObject._update["$set"] ? queryObject._update["$set"] : queryObject._update;
+              Object.keys(updateParams).forEach(function(key) {
+                  dbObject[key] = selfObject[key];
+              });
+
+              saveDiffObject(currentObject, dbObject, updateParams, queryObject.options.__user, queryObject.options.__reason, function(){
+                  callback();
+              });
+          }
+      }
+    )
 };
 
 var saveDiffs = function(self, next) {
     var queryObject = self;
+
     queryObject.find(queryObject._conditions, function (err, results) {
         if (err) {
             err.message = "Mongo Error :" + err.message;
             return next();
         }
+
         async.eachSeries(results, function (result, callback) {
             if (err) {
                 err.message = "Mongo Error :" + err.message;
                 return next();
             }
+
             saveDiffHistory(queryObject, result, callback);
         }, function done() {
             return next();
@@ -148,6 +165,7 @@ var getHistories = function (modelName, id, expandableFields, callback) {
 var plugin = function lastModifiedPlugin(schema, options) {
 
     schema.pre("save", function (next) {
+
         var self = this;
         if(self.isNew) {
             next();
@@ -161,18 +179,21 @@ var plugin = function lastModifiedPlugin(schema, options) {
     });
 
     schema.pre("findOneAndUpdate", function (next) {
+
         saveDiffs(this, function(){
             next();
         });
     });
 
     schema.pre("update", function (next) {
+
         saveDiffs(this, function(){
             next();
         });
     });
 
     schema.pre("remove", function(next) {
+
         saveDiffObject(this, this, {}, this.__user, this.__reason, function(){
             next();
         })
