@@ -1,6 +1,9 @@
 var History = require("./diffHistoryModel");
 var async = require("async");
 var jsondiffpatch = require("jsondiffpatch").create();
+var moment = require("./moment");
+moment.locale('th');
+
 
 var saveHistoryObject = function (history, callback){
     history.save(function (err) {
@@ -125,8 +128,8 @@ var getHistories = function (modelName, id, expandableFields, callback) {
             var changedFields = [];
 
             var date = history.diff['updatedOn'][1] || history.diff['updatedOn'][0]
-            var d = new Date(date);
-            var datetime =`: ${d.getDay()}/${d.getMonth()}/${d.getUTCFullYear()}`;
+            var d = moment(date);
+            var datetime =`: ${d.fromNow()}`;
             for (var key in history.diff) {
                 if (history.diff.hasOwnProperty(key)) {
 

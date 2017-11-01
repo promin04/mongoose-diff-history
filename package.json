@@ -11,7 +11,8 @@
     "url": "https://github.com/mimani/mongoose-diff-history"
   },
   "dependencies": {
-    "async": "*"
+    "async": "*",
+    "moment": "^2.19.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
