@@ -1,7 +1,7 @@
 var History = require("./diffHistoryModel");
 var async = require("async");
 var jsondiffpatch = require("jsondiffpatch").create();
-var moment = require("./moment");
+var moment = require("moment");
 moment.locale('th');
 
 
