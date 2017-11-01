@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "async": "*",
+    "jsondiffpatch": "0.1.38",
     "moment": "^2.19.1"
   },
   "devDependencies": {
