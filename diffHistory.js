@@ -70,7 +70,6 @@ var saveDiffHistory = function(queryObject, currentObject, callback) {
 
 var saveDiffs = function(self, next) {
     var queryObject = self;
-
     queryObject.find(queryObject._conditions, function (err, results) {
         if (err) {
             err.message = "Mongo Error :" + err.message;
@@ -119,6 +118,7 @@ var getVersion = function (model, id, version, callback) {
 
 var getHistories = function (modelName, id, expandableFields, callback) {
     History.find({collectionName: modelName, collectionId: id}, function (err, histories) {
+
         if (err) {
             console.error(err);
             return callback(err, null);
@@ -143,7 +143,7 @@ var getHistories = function (modelName, id, expandableFields, callback) {
                 }
             }
 
-            var comment =  `${history.user.hasOwnProperty('email')?history.user.email:history.user}`+" แก้ " + changedFields.concat(changedValues).join(", ");
+            var comment =  `${history.user && history.user.hasOwnProperty('email')?history.user.email:history.user}`+" แก้ " + changedFields.concat(changedValues).join(", ");
             return mapCallback(null, {
                 changedBy: history.user,
                 changedAt: history.createdAt,
