@@ -116,8 +116,8 @@ var getVersion = function (model, id, version, callback) {
     });
 };
 
-var getHistories = function (modelName, id, expandableFields, callback) {
-    History.find({collectionName: modelName, collectionId: id}, function (err, histories) {
+var getHistories = function (modelName, id, skip, limit, callback) {
+    History.find({collectionName: modelName, collectionId: id}).sort({ 'diff.updatedOn.1': -1, 'diff.updatedOn.0': -1 }).skip(Number(skip)).limit(Number(limit)).exec(function (err, histories) {
 
         if (err) {
             console.error(err);
@@ -134,10 +134,14 @@ var getHistories = function (modelName, id, expandableFields, callback) {
                 if (history.diff.hasOwnProperty(key)) {
 
                       if ('updatedOn' !== key) {
-                        var oldValue = history.diff[key][0];
-                        var newValue = history.diff[key][1];
+                        if(history.diff[key][0]) {
+                          var oldValue = history.diff[key][0];
+                          var newValue = history.diff[key][1];
 
-                        changedValues.push(`${key} จาก \"${oldValue}\" เป็น \"${newValue}\" ${datetime}`);
+                          changedValues.push(`${key} จาก \"${JSON.stringify(oldValue)}\" เป็น \"${JSON.stringify(newValue)}\" ${datetime}`);
+                        } else {
+                          changedValues.push(`${key} เป็น \"${JSON.stringify(history.diff[key])}\" ${datetime}`);
+                        }
                       }
 
                 }
