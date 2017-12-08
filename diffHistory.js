@@ -133,7 +133,7 @@ var getHistories = function (modelName, id, skip, limit, callback) {
             for (var key in history.diff) {
                 if (history.diff.hasOwnProperty(key)) {
 
-                      if ('updatedOn' !== key) {
+                      // if ('updatedOn' !== key) {
                         if(history.diff[key][0]) {
                           var oldValue = history.diff[key][0];
                           var newValue = history.diff[key][1];
@@ -142,7 +142,7 @@ var getHistories = function (modelName, id, skip, limit, callback) {
                         } else {
                           changedValues.push(`${key} เป็น \"${JSON.stringify(history.diff[key])}\" ${datetime}`);
                         }
-                      }
+                      // }
 
                 }
             }
